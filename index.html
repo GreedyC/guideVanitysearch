@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VanitySearch İnteraktif Rehberi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Sakin Teknik (Calm Technical - bg-gray-50, bg-white, text-gray-800, text-teal-700 accent) -->
+    <!-- Application Structure Plan: The linear 20-section technical guide was reorganized into an 8-theme interactive SPA. A persistent sidebar navigation allows users to jump between logical topics (e.g., 'Core Cryptography', 'GPU Pipeline', 'Address Generation') instead of linear scrolling. This thematic, non-linear structure was chosen to serve a technical audience (developers) who need to find specific information quickly. Main content for the active theme is displayed, and interactive HTML/CSS diagrams replace text for key processes (like address generation), enhancing usability and understanding. -->
+    <!-- Visualization & Content Choices: Report Info: Address Generation (Sec 9) -> Goal: Organize/Inform -> Viz: HTML/CSS flowchart diagram -> Interaction: Reading/Flow -> Justification: Visually clarifies a complex, multi-step, branching process (P2PKH, P2SH, P2WPKH) much better than text. | Report Info: Code Map (Sec 19) -> Goal: Organize -> Viz: Styled HTML Table -> Interaction: Reading -> Justification: Translates Markdown table to a more readable, styled format. | Report Info: All other text sections -> Goal: Inform -> Viz: Formatted text blocks with `<code>` tags -> Interaction: Reading -> Justification: Appropriate for technical explanations. NO Chart.js used as the report contains no quantitative data, only technical descriptions. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        .page-section {
+            display: none;
+        }
+        .page-section.active {
+            display: block;
+        }
+        nav a.active {
+            background-color: #f0fdfa; /* teal-50 */
+            color: #0f766e; /* teal-700 */
+            font-weight: 600;
+        }
+        .flow-box {
+            @apply bg-white p-3 rounded-lg shadow border border-gray-200 text-center text-sm font-medium text-gray-700;
+        }
+        .flow-arrow {
+            @apply text-gray-400 text-2xl font-light;
+        }
+        .flow-label {
+            @apply text-xs text-teal-700 font-semibold uppercase tracking-wider my-1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex min-h-screen">
+
+    <nav class="w-64 bg-white border-r border-gray-200 p-4 fixed top-0 left-0 h-full overflow-y-auto">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">VanitySearch Rehberi</h2>
+        <ul class="space-y-2">
+            <li><a href="#tema-giris" class="nav-link flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-600"><span>🏠</span><span>Giriş ve Genel Akış</span></a></li>
+            <li><a href="#tema-kriptografi" class="nav-link flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-600"><span>🔑</span><span>Temel Kriptografi</span></a></li>
+            <li><a href="#tema-altyapi" class="nav-link flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-600"><span>🧮</span><span>Matematiksel Altyapı</span></a></li>
+            <li><a href="#tema-adres" class="nav-link flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-600"><span>🔗</span><span>Adres Üretimi & Arama</span></a></li>
+            <li><a href="#tema-performans" class="nav-link flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-600"><span>🚀</span><span>Performans & Optimizasyon</span></a></li>
+            <li><a href="#tema-gpu" class="nav-link flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-600"><span>💻</span><span>GPU Pipeline</span></a></li>
+            <li><a href="#tema-diger" class="nav-link flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-600"><span>📦</span><span>Diğer Bileşenler</span></a></li>
+            <li><a href="#tema-kod" class="nav-link flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-100 text-gray-600"><span>🗺️</span><span>Kod Haritası</span></a></li>
+        </ul>
+    </nav>
+
+    <main class="ml-64 flex-1 p-8 md:p-10">
+        
+        <div id="tema-giris" class="page-section space-y-6">
+            <h1 class="text-3xl font-bold text-gray-900">Giriş ve Genel Akış</h1>
+            <p class="text-lg text-gray-600">Bu bölüm, programın genel amacını, mimarisini ve ana bileşenlerini özetler. VanitySearch, belirli kalıplara uyan Bitcoin adreslerini bulmak için tasarlanmış yüksek performanslı bir araçtır.</p>
+            
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Genel Akış ve Amaç (Bölüm 1)</h3>
+                <p class="mb-4">Programın temel görevi: Belirli kalıplara (prefix veya tam adreslere) uyan Bitcoin adresleri için uygun private key’leri bulmak. GPU hızlandırması ve SIMD (SSE) kullanarak çok sayıda aday anahtarın hash160 (ve dolayısıyla adres) üretimini paralel yapar.</p>
+                <h4 class="font-semibold text-gray-800 mb-2">Ana bileşenler:</h4>
+                <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li><code class="bg-gray-100 px-1 rounded">Int / IntMod</code>: Sabit boyutlu büyük tamsayı işlemleri (256 bit) ve modüler aritmetik.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">Secp256K1</code>: Eliptik eğri noktaları, public key üretimi, nokta ekleme/çiftleme.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">VanitySearch</code>: Arama mantığı, adres önceden indeksleme (lookup tablosu), eşleşme kontrolü.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">Random</code>: Mersenne Twister tabanlı deterministik RNG.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">Hash fonksiyonları</code>: SHA-256, RIPEMD-160, SHA-512 türevleri, SSE hızlandırılmış toplu uygulamalar.</li>
+                </ul>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Özet (Bölüm 15)</h3>
+                <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li>Program; büyük tamsayı, eliptik eğri ve adres kodlama katmanlarını yüksek performans için özelleştirilmiş şekilde birleştiriyor.</li>
+                    <li>Rastgelelik kısmı Mersenne Twister ile deterministik; güvenlik değil hız için.</li>
+                    <li>Endomorfizm ve tablo ön hesaplama skaler çarpma maliyetini düşürüyor.</li>
+                    <li>SSE ile hash160 üretimi adres eşleşme hızını artırıyor.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="tema-kriptografi" class="page-section space-y-6">
+            <h1 class="text-3xl font-bold text-gray-900">Temel Kriptografi</h1>
+            <p class="text-lg text-gray-600">VanitySearch'ün kalbinde yatan eliptik eğri kriptografisi. Bu bölümde secp256k1 eğrisi, noktaların nasıl temsil edildiği ve özel anahtardan açık anahtara geçiş incelenir.</p>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">secp256k1 Eğrisi Tanımı (Bölüm 5)</h3>
+                <p class="mb-2">Kullanılan eğri denklemi:</p>
+                <div class="bg-gray-100 p-4 rounded text-center font-mono text-lg text-gray-800">
+                    y² = x³ + 7 mod p
+                </div>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">Parametreler:</h4>
+                <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700 font-mono text-sm">
+                    <li><strong class="text-gray-600">p (alan asalı):</strong> <br>FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE FFFFFC2F</li>
+                    <li><strong class="text-gray-600">G (generator):</strong> <br>(xG, yG) belirlenmiş sabit noktalar.</li>
+                    <li><strong class="text-gray-600">order (n):</strong> <br>FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141</li>
+                </ul>
+                <p class="mt-3"><code class="bg-gray-100 px-1 rounded">Int::SetupField(p)</code> ile alan; <code class="bg-gray-100 px-1 rounded">Int::InitK1(order)</code> ile grup düzeni konfigurasyonu yapılır.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Nokta Temsili ve Operasyonlar (Bölüm 6)</h3>
+                <p class="mb-2"><code class="bg-gray-100 px-1 rounded">Point</code> sınıfı: Jacobian koordinatlar (x, y, z) kullanır. Avantajı: Affine nokta eklemede gereken mod inverse sayısını azaltmaktır.</p>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">Önemli Metodlar:</h4>
+                <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li><code class="bg-gray-100 px-1 rounded">Reduce()</code>: Jacobian -> Affine dönüşümü (x/z, y/z) için z’nin mod tersini alır.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">AddDirect</code> / <code class="bg-gray-100 px-1 rounded">Add2</code>: Optimize edilmiş nokta ekleme formülleri.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">Double</code> / <code class="bg-gray-100 px-1 rounded">DoubleDirect</code>: Optimize edilmiş nokta çiftleme formülleri.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">GetY(x, parity)</code>: x koordinatından y koordinatını hesaplar (ModSqrt ile).</li>
+                    <li><code class="bg-gray-100 px-1 rounded">EC(p)</code>: Noktanın eğri üzerinde olup olmadığını doğrular.</li>
+                </ul>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Private Key’den Public Key’e Dönüş (Bölüm 10)</h3>
+                <h4 class="font-semibold text-gray-800 mb-2">ComputePublicKey:</h4>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li>Private key’in her byte’ını (önden anlamlı ilk sıfır olmayan byte locates) alır.</li>
+                    <li>Tablo girişleri (GTable) ile <code class="bg-gray-100 px-1 rounded">Add2</code> toplayarak Jacobian formda sonuç üretir.</li>
+                    <li>En sonunda <code class="bg-gray-100 px-1 rounded">Reduce()</code> ile affine’e dönüştürür.</li>
+                </ul>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">NextKey:</h4>
+                <p>Bir public key’den bir sonrakine geçmek için <code class="bg-gray-100 px-1 rounded">AddDirect(key, G)</code> kullanılır. Bu, sekansiyel taramalarda incremental aramayı hızlandırır.</p>
+            </div>
+        </div>
+
+        <div id="tema-altyapi" class="page-section space-y-6">
+            <h1 class="text-3xl font-bold text-gray-900">Matematiksel Altyapı</h1>
+            <p class="text-lg text-gray-600">Tüm kriptografik operasyonların temelini oluşturan düşük seviyeli matematik rutinleri. Bu bölümde büyük tamsayılar, modüler aritmetik ve modüler ters alma işlemleri açıklanmaktadır.</p>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Büyük Tamsayı Altyapısı (Int) (Bölüm 2)</h3>
+                <p class="mb-2"><code class="bg-gray-100 px-1 rounded">Int</code> sınıfı 256-bit (NB64BLOCK = 5 veya 9) veri yapısı sağlar. Temel fikir: Sabit boyutlu bir alan, bellek ayırma yok, dallanma azaltımı => yüksek performans.</p>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">Temel İşlemler:</h4>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li><code class="bg-gray-100 px-1 rounded">Add, Sub, Mult</code>: Taşma taşıyıcıları (<code class="bg-gray-100 px-1 rounded">_addcarry_u64</code>) ve inline assembly (mulq, divq) ile hızlandırılır.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">ShiftL / ShiftR</code>: Mantıksal kaydırmalar.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">IsZero</code>: Hızlı OR birleştirme ile (tüm limb’ler sıfır mı?).</li>
+                </ul>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Modüler Aritmetik ve Montgomery Çarpımı (Bölüm 3)</h3>
+                <p class="mb-2">Montgomery formu: Bir mod p alanında çarpma yaparken klasik mod alma maliyetini azaltır.</p>
+                <p class="font-mono text-sm bg-gray-100 p-3 rounded mb-2"><code class="bg-gray-100 px-1 rounded">MontgomeryMultiplication</code>: (a * b * R⁻¹) mod p</p>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">Kritik Fonksiyonlar:</h4>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li><code class="bg-gray-100 px-1 rounded">ModAdd / ModSub</code>: top-limb işarete göre düzeltme yapıp p ekleme veya çıkarma.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">ModMul / ModSquare</code>: Çarpma ve karesini alıp Montgomery indirgeme.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">ModNeg</code>: Alan içinde negatifini alır (P - x).</li>
+                    <li><code class="bg-gray-100 px-1 rounded">ModSqrt / HasSqrt</code>: secp256k1’de y koordinatını elde etmek için kullanılır.</li>
+                </ul>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Modüler Ters (ModInv – DivStep62) (Bölüm 4)</h3>
+                <p class="mb-2">Kritik performans noktası: Nokta ekleme/çiftleme formüllerinde slope (s) hesaplamak için (dx)⁻¹ veya (2\*y)⁻¹ gerekir.</p>
+                <p class="mb-2">Aktif olan implementasyon: <code class="bg-gray-100 px-1 rounded">DRS62</code>. Bu yöntem, extended GCD’nin sabit bit dilimlerinde iteratif hızlandırılmış uygulanmasıdır.</p>
+                 <h4 class="font-semibold text-gray-800 mt-4 mb-2">DivStep62:</h4>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li>v ve u üzerinde 62 bitlik bloklar halinde azaltma.</li>
+                    <li>Koşullu swap ve toplama işlemleri sentinel bit teknikleriyle (TZC = trailing zero count) hızlandırılır.</li>
+                    <li>Küçük 128-bit matris katsayıları (uu, uv, vu, vv) kullanır.</li>
+                </ul>
+                <p class="mt-3"><strong class="text-gray-900">Avantaj:</strong> Sabit zamanlıya yakın davranış ve yüksek hız (~780 Kinv/s).</p>
+            </div>
+        </div>
+
+        <div id="tema-adres" class="page-section space-y-6">
+            <h1 class="text-3xl font-bold text-gray-900">Adres Üretimi & Arama</h1>
+            <p class="text-lg text-gray-600">Açık anahtarın (public key) son kullanıcı tarafından görülebilen Bitcoin adresine nasıl dönüştürüldüğünü ve bu adreslerin veritabanında nasıl verimli bir şekilde arandığını açıklar.</p>
+            
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Adres Üretim Akışı (Bölüm 9)</h3>
+                <p class="mb-4">Public key'den Bitcoin adresine dönüşüm, birden fazla hash fonksiyonu ve kodlama adımı içeren bir süreçtir. Aşağıdaki şema, bu akışı görselleştirmektedir.</p>
+                
+                <div class="flex flex-col items-center space-y-4">
+                    <div class="flow-box w-full max-w-md">
+                        Public Key<br>
+                        <span class="text-xs font-normal">(Compressed 0x02/0x03 veya Uncompressed 0x04)</span>
+                    </div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-label">SHA-256</div>
+                    <div class="flow-box w-full max-w-md">SHA-256 Hash (32 byte)</div>
+                    <div class="flow-arrow">↓</div>
+                    <div class="flow-label">RIPEMD-160</div>
+                    <div class="flow-box w-full max-w-md bg-teal-50 border-teal-200 text-teal-800">
+                        HASH160 (20 byte)
+                    </div>
+                    
+                    <div class="w-full max-w-4xl pt-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            
+                            <div class="flex flex-col items-center">
+                                <div class="flow-label">P2PKH (Legacy)</div>
+                                <div class="flow-arrow">↓</div>
+                                <div class="flow-box w-full">version 0x00 + HASH160</div>
+                                <div class="flow-arrow">↓</div>
+                                <div class="flow-label">Base58Check Encode</div>
+                                <div class="flow-box w-full bg-gray-50">1... ile başlayan adres</div>
+                            </div>
+                            
+                            <div class="flex flex-col items-center">
+                                <div class="flow-label">P2SH (Script Hash)</div>
+                                <div class="flow-arrow">↓</div>
+                                <div class="flow-box w-full">version 0x05 + HASH160</div>
+                                <div class="flow-arrow">↓</div>
+                                <div class="flow-label">Base58Check Encode</div>
+                                <div class="flow-box w-full bg-gray-50">3... ile başlayan adres</div>
+                            </div>
+                            
+                            <div class="flex flex-col items-center">
+                                <div class="flow-label">P2WPKH (Bech32)</div>
+                                <div class="flow-arrow">↓</div>
+                                <div class="flow-box w-full">hrp="bc", witver=0, witprog=HASH160</div>
+                                <div class="flow-arrow">↓</div>
+                                <div class="flow-label">Bech32 Encode</div>
+                                <div class="flow-box w-full bg-gray-50">bc1... ile başlayan adres</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Arama Mantığı ve Lookup Tablosu (Bölüm 11)</h3>
+                <p class="mb-2"><code class="bg-gray-100 px-1 rounded">VanitySearch</code> constructor'ı, aranan adreslerin HASH160 öneklerinden bir lookup tablosu oluşturur.</p>
+                <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li>65536 girişli (16-bit) ana adres tablosu kullanılır.</li>
+                    <li>Bu tablo, HASH160'ın ilk 16-bitine (sAddress) göre doğrudan erişim sağlar.</li>
+                    <li>Çakışmalar (aynı ilk 16-bite sahip farklı hedefler) <code class="bg-gray-100 px-1 rounded">vector&lt;ADDRESS_ITEM&gt;</code> içinde saklanır.</li>
+                    <li>İsteğe bağlı 32-bit (lAddress) önekler de oluşturulur.</li>
+                </ul>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">Match Kontrolü:</h4>
+                <p>SSE modunda 4 adres birden üretilir (<code class="bg-gray-100 px-1 rounded">checkAddrSSE</code>) ve wildcard eşleştirme uygulanır. Eşleşme bulunursa, <code class="bg-gray-100 px-1 rounded">checkPrivKey</code> ile private key doğrulanır (negatif veya endomorfik alternatifler de denenir).</p>
+            </div>
+        </div>
+
+        <div id="tema-performans" class="page-section space-y-6">
+            <h1 class="text-3xl font-bold text-gray-900">Performans & Optimizasyon</h1>
+            <p class="text-lg text-gray-600">Programın yüksek hızlara ulaşmasını sağlayan çekirdek optimizasyon teknikleri. Bu bölümde G tablosu, endomorfizm ve SSE kullanımı gibi konular yer alır.</p>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Generator Tablosu (Bölüm 7)</h3>
+                <p class="mb-2">Init sırasında <code class="bg-gray-100 px-1 rounded">GTable[256*32]</code> dizisi oluşturulur. Bu, skaler çarpmayı (public key hesabı) hızlandıran bir ön hesaplama tablosudur.</p>
+                <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li>Private key'in her byte'ı (1..255) için G'nin katları önceden hesaplanır.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">ComputePublicKey(priv)</code>: Private key'in byte'larını tarar, tablodan ilgili değerleri alır ve <code class="bg-gray-100 px-1 rounded">Add2</code> ile birleştirir.</li>
+                    <li>Sonuç: Klasik skaler çarpma yerine byte ayrıştırmalı ön hesaplama (wNAF benzeri) ile performans kazancı sağlanır.</li>
+                </ul>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Endomorfizm (GLV) Optimizasyonu (Bölüm 8)</h3>
+                <p class="mb-2">GLV (Gallant–Lambert–Vanstone) yöntemi, secp256k1'in özel yapısını kullanarak skaler çarpmayı daha da hızlandırır.</p>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li><code class="bg-gray-100 px-1 rounded">lambda</code> ve <code class="bg-gray-100 px-1 rounded">beta</code> sabitleri kullanılır.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">checkPrivKey</code> fonksiyonu, aranan adresi bulma olasılığını artırmak için private key'i <code class="bg-gray-100 px-1 rounded">lambda</code> ile çarparak ilişkili (ama farklı) bir public key daha hesaplar.</li>
+                    <li>Ayrıca `Opposite` (negatif) anahtar da denenir.</li>
+                    <li>Fayda: Arama uzayını transform ederek bazı desenler için daha hızlı eşleşme sağlar.</li>
+                </ul>
+            </div>
+            
+             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">SSE Toplu Hashleme (Bölüm 9'dan)</h3>
+                <p class="mb-2">Adres üretimindeki HASH160 hesaplaması, CPU'nun SIMD (Single Instruction, Multiple Data) komut setleri (SSE) ile paralelleştirilir.</p>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li><code class="bg-gray-100 px-1 rounded">sha256sse_1B / 2B</code>: Birden fazla public key'in ilk aşama SHA-256'sını yapar.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">ripemd160sse_32</code>: Aynı anda 4 blok (32 byte) RIPEMD-160 hesaplar.</li>
+                    <li>Bu şekilde <code class="bg-gray-100 px-1 rounded">checkAddressesSSE</code> fonksiyonu 4 nokta için aynı anda hash160 hesaplar.</li>
+                </ul>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Performans Notları ve Olası İyileştirmeler (Bölüm 13)</h3>
+                <h4 class="font-semibold text-gray-800 mb-2">Mevcut Optimizasyonlar:</h4>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li>SSE hash toplu hesaplama.</li>
+                    <li>Önceden hesaplanmış G tablosu (32*256 nokta).</li>
+                    <li>DivStep62 ile hızlı mod inverse.</li>
+                    <li>Endomorfizm kullanımı (lambda/lambda2).</li>
+                </ul>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">Olası Ek İyileştirmeler:</h4>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li>AVX2 / AVX-512 hash pipeline.</li>
+                    <li>GPU tarafında daha fazla ECC operasyonu.</li>
+                    <li>wNAF veya Pippenger çoklu skaler çarpma stratejisi.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="tema-gpu" class="page-section space-y-6">
+            <h1 class="text-3xl font-bold text-gray-900">GPU Pipeline</h1>
+            <p class="text-lg text-gray-600">Aramayı kitlesel olarak paralelleştirmek için kullanılan GPU (CUDA) mimarisinin, matematik pipeline'ının ve adres kontrol mekanizmalarının ayrıntıları.</p>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">GPU Matematik Pipeline (Bölüm 16)</h3>
+                <p class="mb-2">Çekirdek kernel: <code class="bg-gray-100 px-1 rounded">comp_keys</code> (<code class="bg-gray-100 px-1 rounded">GPU/GPUEngine.cu</code>). Amaç: Her GPU thread grubuna (GRP_SIZE=1024) bir başlangıç public key verilir ve grup içinde deterministik adımlarla yeni noktalar türetilip hashlenir.</p>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">Ana Adımlar:</h4>
+                <ol class="list-decimal list-outside pl-5 space-y-1 text-gray-700">
+                    <li><b>Başlangıç x,y load</b> (<code class="bg-gray-100 px-1 rounded">Load256A</code>): Thread'ler başlangıç noktalarını register'lara alır.</li>
+                    <li><b>İlk nokta hashlenir:</b> <code class="bg-gray-100 px-1 rounded">_GetHash160Comp</code>.</li>
+                    <li><b>Alt grup farkları precompute edilir:</b> Gelecekteki slope hesaplamalarında tersleri tek bir global inverse (<code class="bg-gray-100 px-1 rounded">_ModInv</code>) ile amortize etmek için.</li>
+                    <li><b>Inverse hesaplama:</b> <code class="bg-gray-100 px-1 rounded">_ModInv</code> (GPUMath.h) 256 bit sayı için mod p tersini GPU üzerinde hesaplar.</li>
+                    <li><b>İki dal (İleri ve geri tarama):</b> Döngü içinde slope hesaplanır, yeni (px, py) koordinatları oluşturulur.</li>
+                    <li><b>Hash160 üretimi ve Kontrol:</b> <code class="bg-gray-100 px-1 rounded">_GetHash160Comp</code> ve ardından <code class="bg-gray-100 px-1 rounded">CheckPoint</code> çağrısı ile 16-bit önek hash lookup tablosuna bakılır.</li>
+                    <li><b>Son set:</b> Final state yeni başlangıç olarak kaydedilir (<code class="bg-gray-100 px-1 rounded">Store256A</code>), böylece kernel kaldığı yerden devam eder.</li>
+                </ol>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">Sayısal Temel (GPU'da):</h4>
+                <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li><code class="bg-gray-100 px-1 rounded">_ModMult</code>, <code class="bg-gray-100 px-1 rounded">_ModSqr</code>: 256x256 bit çarpma ve özel indirgeme.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">_ModInv</code>: GPU’da DivStep62 varyantı (signed 320-bit temsil).</li>
+                </ul>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">GPU Hash Pipeline ve Adres Kontrol (Bölüm 17)</h3>
+                <p class="mb-2"><code class="bg-gray-100 px-1 rounded">GPUHash.h</code>: SHA-256 ve RIPEMD-160 transformasyonları için optimize edilmiş makrolar içerir. Hash160 pipeline'ı, CPU'ya yük bindirmeden GPU'da tek çağrıda yürütülür.</p>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">CheckPoint (GPUCompute.h):</h4>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li>16-bit prefix (ilk iki byte) doğrudan index olarak kullanılır: <code class="bg-gray-100 px-1 rounded">address[pr0]</code>.</li>
+                    <li>Eğer hit sıfır değilse, ikinci seviye tablo (<code class="bg-gray-100 px-1 rounded">lookup32</code>) içinde binary search ile 32-bit alt önek taranır.</li>
+                    <li>Eşleşme bulunursa <code class="bg-gray-100 px-1 rounded">atomicAdd</code> ile global output buffer’a sonuç yazılır.</li>
+                </ul>
+                <p class="mt-3"><b>Not:</b> Adres sadece hash160 düzeyinde kontrol edilir. Tam Base58/Bech32 string oluşturma CPU’ya bırakılır.</p>
+            </div>
+            
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Base58 / Bech32 GPU Durumu ve Kısıtlar (Bölüm 18)</h3>
+                <p class="mb-2"><code class="bg-gray-100 px-1 rounded">GPUBase58.h</code>’de yorumlanmış <code class="bg-gray-100 px-1 rounded">_GetAddress</code> fonksiyonu bulunur ancak aktif değildir. Sebepler:</p>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li>Base58’deki tekrarlı bölme (carry + 58 mod) süreçleri warp verimliliğini düşürür.</li>
+                    <li>Adres uzunluğu değişkendir; bu durum thread'ler arası "divergence" (dallanma) yaratır.</li>
+                    <li>Hash160 prefix filtreleme çok daha ucuzdur. Tam string kontrolü CPU'da yapmak daha verimlidir.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="tema-diger" class="page-section space-y-6">
+            <h1 class="text-3xl font-bold text-gray-900">Diğer Bileşenler</h1>
+            <p class="text-lg text-gray-600">Programın çalışması için kritik olan ancak ana kriptografi veya GPU pipeline'ı dışında kalan yardımcı bileşenler: rastgelelik ve güvenlik.</p>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Rastgelelik (Random.cpp – Mersenne Twister) (Bölüm 12)</h3>
+                <p class="mb-2">Kod, klasik MT19937 (Mersenne Twister) benzeri, 624 uzunluklu state kullanan bir deterministik rastgele sayı üretecidir (RNG).</p>
+                <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li><code class="bg-gray-100 px-1 rounded">rk_seed</code>: Knuth PRNG adımı ile state'i doldurur.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">rk_random</code>: Twister karıştırma ve tempering aşamalarını uygular.</li>
+                </ul>
+                <pre class="bg-gray-100 p-4 rounded text-sm text-gray-700 my-2"><code>y ^= (y >> 11);
+y ^= (y << 7) & 0x9d2c5680UL;
+y ^= (y << 15) & 0xefc60000UL;
+y ^= (y >> 18);</code></pre>
+                <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg">
+                    <h4 class="font-bold">Kriptografik Uyarı:</h4>
+                    <p>MT deterministik ve tahmin edilebilirdir. Bu araç sadece hız/yerel dağılım için, gerçek private key üretiminde güvenli değildir. Program, arama uzayını deterministik şekilde genişletmek (vanity mining) için kullanıyor.</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Gelişmiş Rastgelelik (Bölüm 20)</h3>
+                <p class="mb-2">Eklenen fonksiyon: <code class="bg-gray-100 px-1 rounded">rseed_auto()</code> (Unix: <code class="bg-gray-100 px-1 rounded">/dev/urandom</code> > fallback <code class="bg-gray-100 px-1 rounded">time(NULL)</code>). Bu, başlangıç arama dizisini daha az tahmin edilebilir yapar.</p>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">Öneriler:</h4>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li>Hâlen MT'nin deterministiği sürdüğü için kriptografik güvenlik gerekirse ChaCha20 tabanlı bir DRBG eklenebilir.</li>
+                    <li>Opsiyonel <code class="bg-gray-100 px-1 rounded">USE_CSPRNG</code> bayrağı ile libsodium veya OpenSSL <code class="bg-gray-100 px-1 rounded">RAND_bytes</code> kullanılabilir.</li>
+                </ul>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-900 mb-3">Güvenlik ve Kriptografik Sağlamlık (Bölüm 14)</h3>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li>Doğru eğri parametreleri (secp256k1 standart) kullanılır.</li>
+                    <li>Public key doğrulaması <code class="bg-gray-100 px-1 rounded">EC(p)</code> ile yapılır.</li>
+                    <li>Hash160, Base58Check ve Bech32 süreçleri Bitcoin standardına uygundur.</li>
+                    <li>RNG (Mersenne Twister) kriptografik değildir; üretim gizliliği kritikse değiştirilmelidir.</li>
+                </ul>
+                <h4 class="font-semibold text-gray-800 mt-4 mb-2">Edge Case Riskleri:</h4>
+                 <ul class="list-disc list-outside pl-5 space-y-1 text-gray-700">
+                    <li><code class="bg-gray-100 px-1 rounded">checkPrivKey</code>, yanlış private key üretimi durumunda ikinci (negatif) anahtarı da dener.</li>
+                    <li><code class="bg-gray-100 px-1 rounded">ModInv</code> başarısız olursa (y=0 vb.) nokta çiftleme Infinity dönebilir.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="tema-kod" class="page-section space-y-6">
+            <h1 class="text-3xl font-bold text-gray-900">Kod Referans Haritası</h1>
+            <p class="text-lg text-gray-600">Programdaki ana konseptlerin kod tabanında hangi dosya ve fonksiyonlara karşılık geldiğini gösteren hızlı bir referans tablosu.</p>
+            
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <table class="w-full min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Konsept</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dosya / Fonksiyon</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Büyük tamsayı CPU</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`Int.cpp` / `Mult`, `ModInv`, `MontgomeryMult`</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Büyük tamsayı GPU</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`GPUMath.h` / `_ModMult`, `_ModInv`, `_ModSqr`</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Eğri init</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`SECP256K1.cpp::Init()`</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Public key hesap</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`SECP256K1.cpp::ComputePublicKey()` + `GTable`</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Nokta ekleme CPU</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`SECP256K1.cpp::Add`, `AddDirect`, `DoubleDirect`</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Nokta ekleme GPU</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`GPUEngine.cu::comp_keys` (inline mod ops)</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Endomorfizm</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`Vanity.cpp::checkPrivKey()` (lambda, lambda2)</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Hash160 CPU</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`SECP256K1.cpp::GetHash160`</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Hash160 GPU</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`GPUHash.h::SHA256Transform` + `RIPEMD160Transform`</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Adres kontrol GPU</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`GPUCompute.h::CheckPoint`</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Lookup tablo oluşturma</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`Vanity.cpp` ctor (65536 tablo)</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Rastgelelik (seed)</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`Random.cpp::rseed`, `rseed_auto`</td>
+                        </tr>
+                         <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">GPU key dağıtım</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`GPUEngine.cu::SetKeys`</td>
+                        </tr>
+                         <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Kernel çağrısı</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">`GPUEngine.cu::callKernel` / `Launch`</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.page-section');
+            const mainContent = document.querySelector('main');
+
+            function showSection(targetId) {
+                sections.forEach(section => {
+                    if (section.id === targetId) {
+                        section.classList.add('active');
+                    } else {
+                        section.classList.remove('active');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === `#${targetId}`) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+                
+                mainContent.scrollTo(0, 0);
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = e.currentTarget.getAttribute('href').substring(1);
+                    showSection(targetId);
+                    
+                    window.location.hash = targetId;
+                });
+            });
+
+            const initialHash = window.location.hash;
+            if (initialHash) {
+                showSection(initialHash.substring(1));
+            } else {
+                showSection('tema-giris');
+            }
+        });
+    </script>
+</body>
+</html>
